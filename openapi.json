@@ -1,0 +1,630 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ITBoost (Unofficial) API",
+    "version": "0.1.1-draft",
+    "description": "⚠️ Unofficial placeholder spec for ITBoost. Use this as a scaffold for Rewst. Update servers, paths, and schemas to match your tenant's private API.\n\nAuth: API key via header is common. Optionally support Bearer if available.\n\nSecurity & Privacy: Do not log secrets or PII. Use least-privilege keys and IP restrictions."
+  },
+  "servers": [
+    {
+      "url": "https://{region}.itboost.com/api/v1",
+      "description": "Regional endpoint (example). Replace with your actual base URL.",
+      "variables": {
+        "region": {
+          "enum": ["us", "eu", "asia", "au"],
+          "default": "asia",
+          "description": "Region subdomain used by your ITBoost instance."
+        }
+      }
+    }
+  ],
+  "tags": [
+    { "name": "Health", "description": "Connectivity checks" },
+    { "name": "Identity", "description": "Current user/organization context" },
+    { "name": "Companies", "description": "Clients / organizations" },
+    { "name": "Contacts", "description": "People records" },
+    { "name": "Locations", "description": "Sites / offices" },
+    { "name": "Assets", "description": "Configurations / devices / apps" },
+    { "name": "Passwords", "description": "Credential objects (use with extreme care)" },
+    { "name": "KB", "description": "Knowledge base articles" },
+    { "name": "Documents", "description": "Files / runbooks / SOPs" },
+    { "name": "Search", "description": "Global search" },
+    { "name": "Integrations", "description": "Linked PSA/RMM metadata (read-only stubs)" }
+  ],
+  "security": [
+    { "ApiKeyAuth": [] },
+    { "BearerAuth": [] }
+  ],
+  "paths": {
+    "/ping": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Ping",
+        "operationId": "ping",
+        "responses": {
+          "200": {
+            "description": "Service is reachable",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "status": { "type": "string", "example": "ok" }, "time": { "type": "string", "format": "date-time" } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "tags": ["Identity"],
+        "summary": "Current user profile",
+        "operationId": "getCurrentUser",
+        "responses": {
+          "200": {
+            "description": "Current identity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string" },
+                    "email": { "type": "string" },
+                    "name": { "type": "string" },
+                    "roles": { "type": "array", "items": { "type": "string" } },
+                    "orgId": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations": {
+      "get": {
+        "tags": ["Identity"],
+        "summary": "List organizations available to the caller",
+        "operationId": "listOrganizations",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 50 }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Free-text filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paged organizations",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PagedOrganizationList" } } }
+          }
+        }
+      }
+    },
+    "/companies": {
+      "get": {
+        "tags": ["Companies"],
+        "summary": "List companies",
+        "operationId": "listCompanies",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 50 }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Free-text filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paged companies",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PagedCompanyList" } } }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Companies"],
+        "summary": "Create company (if your tenant allows writes)",
+        "operationId": "createCompany",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CompanyCreate" } } }
+        },
+        "responses": {
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Company" } } } }
+        }
+      }
+    },
+    "/companies/{companyId}": {
+      "get": {
+        "tags": ["Companies"],
+        "summary": "Get company by ID",
+        "operationId": "getCompany",
+        "parameters": [
+          { "name": "companyId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Company", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Company" } } } },
+          "404": { "description": "Not found" }
+        }
+      },
+      "patch": {
+        "tags": ["Companies"],
+        "summary": "Update company",
+        "operationId": "updateCompany",
+        "parameters": [
+          { "name": "companyId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CompanyUpdate" } } } },
+        "responses": {
+          "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Company" } } } }
+        }
+      }
+    },
+    "/companies/{companyId}/locations": {
+      "get": {
+        "tags": ["Locations"],
+        "summary": "List locations for a company",
+        "operationId": "listCompanyLocations",
+        "parameters": [
+          { "name": "companyId", "in": "path", "required": true, "schema": { "type": "string" } },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 50 }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Locations", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PagedLocationList" } } } }
+        }
+      }
+    },
+    "/companies/{companyId}/contacts": {
+      "get": {
+        "tags": ["Contacts"],
+        "summary": "List contacts for a company",
+        "operationId": "listCompanyContacts",
+        "parameters": [
+          { "name": "companyId", "in": "path", "required": true, "schema": { "type": "string" } },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 50 }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Free-text filter"
+          }
+        ],
+        "responses": {
+          "200": { "description": "Contacts", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PagedContactList" } } } }
+        }
+      }
+    },
+    "/assets": {
+      "get": {
+        "tags": ["Assets"],
+        "summary": "List assets/configurations",
+        "operationId": "listAssets",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 50 }
+          },
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Optional company filter"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["server", "workstation", "network", "app", "other"] }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Assets", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PagedAssetList" } } } }
+        }
+      }
+    },
+    "/passwords": {
+      "get": {
+        "tags": ["Passwords"],
+        "summary": "List password records (masked)",
+        "operationId": "listPasswords",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 50 }
+          },
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Optional company filter"
+          }
+        ],
+        "responses": {
+          "200": { "description": "Passwords (metadata only by default)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PagedPasswordList" } } } }
+        }
+      },
+      "post": {
+        "tags": ["Passwords"],
+        "summary": "Create password record",
+        "operationId": "createPassword",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasswordCreate" } } } },
+        "responses": {
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Password" } } } }
+        }
+      }
+    },
+    "/passwords/{passwordId}/reveal": {
+      "post": {
+        "tags": ["Passwords"],
+        "summary": "Reveal password secret (audit-logged)",
+        "operationId": "revealPassword",
+        "parameters": [
+          { "name": "passwordId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Secret revealed", "content": { "application/json": { "schema": { "type": "object", "properties": { "secret": { "type": "string", "description": "Return only if caller is entitled. Avoid logging." } } } } } },
+          "403": { "description": "Forbidden" }
+        }
+      }
+    },
+    "/kb/articles": {
+      "get": {
+        "tags": ["KB"],
+        "summary": "List KB articles",
+        "operationId": "listKbArticles",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 50 }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Free-text filter"
+          },
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "KB Articles", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PagedKbArticleList" } } } }
+        }
+      },
+      "post": {
+        "tags": ["KB"],
+        "summary": "Create KB article",
+        "operationId": "createKbArticle",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/KbArticleCreate" } } } },
+        "responses": {
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/KbArticle" } } } }
+        }
+      }
+    },
+    "/documents": {
+      "get": {
+        "tags": ["Documents"],
+        "summary": "List documents",
+        "operationId": "listDocuments",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 50 }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Free-text filter"
+          },
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Documents", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PagedDocumentList" } } } }
+        }
+      },
+      "post": {
+        "tags": ["Documents"],
+        "summary": "Create/upload document (metadata-first)",
+        "operationId": "createDocument",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DocumentCreate" } } } },
+        "responses": {
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Document" } } } }
+        }
+      }
+    },
+    "/search": {
+      "get": {
+        "tags": ["Search"],
+        "summary": "Global search across entities",
+        "operationId": "globalSearch",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Search text"
+          },
+          {
+            "name": "entity",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["company", "contact", "asset", "password", "kb", "document"] }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 50 }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Search results", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SearchResults" } } } }
+        }
+      }
+    },
+    "/integrations/psa": {
+      "get": {
+        "tags": ["Integrations"],
+        "summary": "List PSA integration status (read-only)",
+        "operationId": "getPsaIntegrationStatus",
+        "responses": {
+          "200": { "description": "Integration status", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IntegrationStatus" } } } }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": { "type": "apiKey", "in": "header", "name": "X-ITBoost-ApiKey", "description": "Generate in ITBoost > Settings > Integrations (example flow)." },
+      "BearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "schemas": {
+      "PagedMeta": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer" },
+          "pageSize": { "type": "integer" },
+          "total": { "type": "integer" }
+        }
+      },
+      "Organization": { "type": "object", "properties": { "id": { "type": "string" }, "name": { "type": "string" } } },
+      "PagedOrganizationList": {
+        "type": "object",
+        "properties": { "meta": { "$ref": "#/components/schemas/PagedMeta" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/Organization" } } }
+      },
+      "Company": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "primaryDomain": { "type": "string" },
+          "status": { "type": "string", "enum": ["active", "inactive"] },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "name"]
+      },
+      "CompanyCreate": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "primaryDomain": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["name"]
+      },
+      "CompanyUpdate": { "type": "object", "properties": { "name": { "type": "string" }, "status": { "type": "string", "enum": ["active", "inactive"] }, "tags": { "type": "array", "items": { "type": "string" } } } },
+      "PagedCompanyList": {
+        "type": "object",
+        "properties": { "meta": { "$ref": "#/components/schemas/PagedMeta" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/Company" } } }
+      },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "companyId": { "type": "string" },
+          "name": { "type": "string" },
+          "address": { "type": "string" }
+        },
+        "required": ["id", "companyId", "name"]
+      },
+      "PagedLocationList": { "type": "object", "properties": { "meta": { "$ref": "#/components/schemas/PagedMeta" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/Location" } } } },
+      "Contact": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "companyId": { "type": "string" },
+          "displayName": { "type": "string" },
+          "emails": { "type": "array", "items": { "type": "string", "format": "email" } },
+          "phones": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["id", "companyId", "displayName"]
+      },
+      "PagedContactList": { "type": "object", "properties": { "meta": { "$ref": "#/components/schemas/PagedMeta" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/Contact" } } } },
+      "Asset": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "companyId": { "type": "string" },
+          "type": { "type": "string" },
+          "name": { "type": "string" },
+          "serialNumber": { "type": "string" },
+          "lastSeen": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "companyId", "type", "name"]
+      },
+      "PagedAssetList": { "type": "object", "properties": { "meta": { "$ref": "#/components/schemas/PagedMeta" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/Asset" } } } },
+      "Password": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "companyId": { "type": "string" },
+          "name": { "type": "string" },
+          "username": { "type": "string" },
+          "hasSecret": { "type": "boolean", "description": "Indicates a stored secret exists; do not return the secret in list calls." },
+          "url": { "type": "string", "format": "uri" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "companyId", "name"]
+      },
+      "PasswordCreate": {
+        "type": "object",
+        "properties": {
+          "companyId": { "type": "string" },
+          "name": { "type": "string" },
+          "username": { "type": "string" },
+          "secret": { "type": "string", "description": "Write-only. Never returned by standard GETs." },
+          "url": { "type": "string", "format": "uri" },
+          "notes": { "type": "string" }
+        },
+        "required": ["companyId", "name"]
+      },
+      "PagedPasswordList": { "type": "object", "properties": { "meta": { "$ref": "#/components/schemas/PagedMeta" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/Password" } } } },
+      "KbArticle": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "companyId": { "type": "string", "nullable": true },
+          "title": { "type": "string" },
+          "content": { "type": "string", "description": "Markdown/HTML" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "visibility": { "type": "string", "enum": ["internal", "customer", "public"], "default": "internal" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "title", "content"]
+      },
+      "KbArticleCreate": {
+        "type": "object",
+        "properties": {
+          "companyId": { "type": "string", "nullable": true },
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "visibility": { "type": "string", "enum": ["internal", "customer", "public"] }
+        },
+        "required": ["title", "content"]
+      },
+      "PagedKbArticleList": { "type": "object", "properties": { "meta": { "$ref": "#/components/schemas/PagedMeta" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/KbArticle" } } } },
+      "Document": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "companyId": { "type": "string", "nullable": true },
+          "name": { "type": "string" },
+          "mimeType": { "type": "string" },
+          "size": { "type": "integer" },
+          "downloadUrl": { "type": "string", "format": "uri" }
+        },
+        "required": ["id", "name"]
+      },
+      "DocumentCreate": {
+        "type": "object",
+        "properties": {
+          "companyId": { "type": "string", "nullable": true },
+          "name": { "type": "string" },
+          "mimeType": { "type": "string" },
+          "contentBase64": { "type": "string", "description": "Base64-encoded file content" }
+        },
+        "required": ["name", "contentBase64"]
+      },
+      "PagedDocumentList": { "type": "object", "properties": { "meta": { "$ref": "#/components/schemas/PagedMeta" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/Document" } } } },
+      "SearchResults": {
+        "type": "object",
+        "properties": {
+          "meta": { "$ref": "#/components/schemas/PagedMeta" },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "entity": { "type": "string", "enum": ["company", "contact", "asset", "password", "kb", "document"] },
+                "id": { "type": "string" },
+                "name": { "type": "string" },
+                "snippet": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "IntegrationStatus": {
+        "type": "object",
+        "properties": {
+          "psa": { "type": "string", "example": "connected" },
+          "rmm": { "type": "string", "example": "connected" },
+          "lastSync": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}
