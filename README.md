@@ -1,56 +1,49 @@
-# ITBoost (Unofficial) API
+# ITBoost API
 
-Official OpenAPI 3.0 specification for ITBoost API integration with Rewst.
-
-## Documentation
-[Rewst Custom Integration Guide](https://docs.rewst.help/documentation/configuration/integrations/custom-integrations/custom-integrations-v2)
-
-## Specification Details
-- **Version**: 0.1.1-draft
-- **Base URL**: `https://{region}.itboost.com/api/v1`
-- **Authentication**: ApiKeyAuth
-
-## Description
-⚠️ Unofficial placeholder spec for ITBoost. Use this as a scaffold for Rewst. Update servers, paths, and schemas to match your tenant's private API.
-
-Auth: API key via header is common. Optionally support Bearer if available.
-
-Security & Privacy: Do not log secrets or PII. Use least-privilege keys and IP restrictions.
+OpenAPI 3.0 specification for ITBoost API integration.
 
 ## Usage
 
-### Import into Rewst
-1. Navigate to: Rewst Dashboard > Configuration > Integrations
-2. Create Custom Integration
-3. Upload `openapi.json` from this repository
-4. Configure authentication parameters
-5. Test connection
+### Import into Automation Platforms
+
+Upload `openapi.json` to your automation platform's custom integration feature.
 
 ### Import into API Testing Tools
+
 - **Postman**: Import > Link > Paste raw GitHub URL
 - **Insomnia**: Import > URL > Paste raw GitHub URL
 - **OpenAPI Generator**: `openapi-generator-cli generate -i openapi.json`
 
+### Generate Client Libraries
+
+```bash
+# Python
+openapi-generator-cli generate -i openapi.json -g python -o ./client-python
+
+# JavaScript
+openapi-generator-cli generate -i openapi.json -g javascript -o ./client-js
+
+# PowerShell
+openapi-generator-cli generate -i openapi.json -g powershell -o ./client-powershell
+```
+
 ## Repository Structure
+
 ```
 .
-├── openapi.json              # Primary OpenAPI 3.0 specification
-├── assets/                   # Integration assets (logos, guides)
-├── README.md                 # This file
-└── .github/
-    └── workflows/
-        └── validate-openapi.yml  # CI validation
+├── openapi.json              # OpenAPI 3.0 specification
+├── README.md
+└── LICENSE
 ```
 
-## Validation
-This specification is automatically validated on every commit using GitHub Actions.
-
 ## Contributing
-Maintained by Rewst APAC Automation Team.
 
-## Support
-- **Technical Support**: roc@rewst.io
-- **Documentation**: [Rewst Docs](https://docs.rewst.help)
+Contributions welcome! Please submit a pull request.
+
+## Author
+
+Created by [Jake Pantano](https://github.com/ChickenStrategist)
 
 ## License
-Private repository - Rewst LLC internal use only.
+
+[MIT License](LICENSE)
